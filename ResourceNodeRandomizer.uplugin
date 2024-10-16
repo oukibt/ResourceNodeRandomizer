@@ -1,0 +1,33 @@
+{
+	"FileVersion": 3,
+	"Version": 0,
+	"VersionName": "0.1.0",
+	"FriendlyName": "Resource Node Randomizer",
+	"Description": "Randomly shuffles nodes",
+	"Category": "Modding",
+	"CreatedBy": "oukibt",
+	"CreatedByURL": "",
+	"DocsURL": "https://github.com/oukibt/ResourceNodeRandomizer/wiki",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "ResourceNodeRandomizer",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "SML",
+			"Enabled": true,
+			"SemVersion": "^3.8.0-dev"
+		}
+	],
+	"SemVersion": "0.1.0",
+	"GameVersion": ">=365306"
+}
