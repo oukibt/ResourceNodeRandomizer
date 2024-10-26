@@ -53,7 +53,7 @@ void FResourceNodeRandomizerModule::Log(FString LogData)
             FDateTime Now = FDateTime::Now();
             FString Timestamp = Now.ToString(TEXT("%Y-%m-%d %H:%M:%S"));
 
-            LogFilePtr->Logf(TEXT("[%s] %s"), *Timestamp, *LogData);
+            LogFilePtr->Log(FString::Printf(TEXT("[%s] %s"), *Timestamp, *LogData));
         }
     }
 }

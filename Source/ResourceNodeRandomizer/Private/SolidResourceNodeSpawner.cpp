@@ -9,9 +9,12 @@
 #include "FGResourceNode.h"
 #include "FGResourceNodeBase.h"
 #include "FGResourceMiner.h"
+#include "FGPortableMiner.h"
 #include "FGBuildableResourceExtractor.h"
 #include "Representation/FGResourceNodeRepresentation.h"
 #include "ResourceNodeGrouper.h"
+
+#include "ResourceNodeRandomizer.h"
 
 #include "EngineUtils.h"
 
@@ -176,9 +179,7 @@ void USolidResourceNodeSpawner::ScanWorldResourceNodes(UWorld* World)
         {
             if (!resource.Value.TryLoadFromAssets())
             {
-                FString OreName = "Unknown";
-                UE_LOG(LogTemp, Warning, TEXT("Loaded Seed: %d"), Seed);
-                // UE_LOG(LogTemp, Warning, TEXT("Failed to load asset for resource: %s"), resource.Value.);
+                FResourceNodeRandomizerModule::Log(TEXT("ERROR: Failed to load resource node assets"));
             }
         }
     }
@@ -404,6 +405,25 @@ void USolidResourceNodeSpawner::ReplaceStandardResourceNodesUpdate(UWorld* World
             ResourceExtractor->Destroy();
         }
     }
+
+    for (TActorIterator<AFGPortableMiner> It(World); It; ++It)
+    {
+        AFGPortableMiner* PortableMiner = *It;
+
+        if (CustomResourceNodeMap.Contains(Cast<AFGResourceNode>(PortableMiner->mExtractResourceNode))) continue;
+
+        FVector ExtractorLocation = PortableMiner->GetActorLocation();
+        TPair<AFGResourceNode*, float> ClosestNode = GetClosestCustomResourceNode(World, ExtractorLocation, EOccupiedType::Any);
+
+        if (ClosestNode.Key && ClosestNode.Value < 1500.0f) // 15m
+        {
+            PortableMiner->mExtractResourceNode = ClosestNode.Key;
+        }
+        else
+        {
+            PortableMiner->Destroy();
+        }
+    }
 }
 
 bool USolidResourceNodeSpawner::SpawnCustomResourceNode(UWorld* World, EOreType OreType, FVector Location, const EResourcePurity Purity, bool bUseRaycastAdjust)
@@ -449,7 +469,8 @@ bool USolidResourceNodeSpawner::SpawnCustomResourceNode(UWorld* World, EOreType 
     CustomNode->UpdateRadioactivity();
 
     CustomNode->mBoxComponent->SetWorldLocation(Location);
-    CustomNode->mBoxComponent->SetWorldScale3D(FVector(30.0f, 30.0f, 5.0f));
+    CustomNode->mBoxComponent->SetWorldScale3D(FVector(30.0f, 30.0f, 2.0f));
+    CustomNode->mBoxComponent->SetCollisionProfileName("Resource");
 
     // Spawn Mesh
 
@@ -458,6 +479,16 @@ bool USolidResourceNodeSpawner::SpawnCustomResourceNode(UWorld* World, EOreType 
 
     UStaticMeshComponent* MeshComponent = NewObject<UStaticMeshComponent>(NewActor);
     if (!MeshComponent) return false;
+
+    //
+
+    MeshComponent->SetCollisionProfileName("ResourceMesh");
+    MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    MeshComponent->SetCollisionObjectType(ECC_WorldStatic);
+    MeshComponent->SetGenerateOverlapEvents(false);
+
+    MeshComponent->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
+    MeshComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECollisionResponse::ECR_Block);
 
     //
 
