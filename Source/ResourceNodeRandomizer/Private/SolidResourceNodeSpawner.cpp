@@ -1,10 +1,10 @@
+#include "SolidResourceNodeSpawner.h"
+
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "Components/StaticMeshComponent.h"
-
-#include "SolidResourceNodeSpawner.h"
 
 #include "FGResourceNode.h"
 #include "FGResourceNodeBase.h"
