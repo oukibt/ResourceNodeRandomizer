@@ -1,7 +1,8 @@
+#include "ResourceNodeRandomizer.h"
+
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"
 
-#include "ResourceNodeRandomizer.h"
 #include "EngineUtils.h"
 
 #define LOCTEXT_NAMESPACE "FResourceNodeRandomizerModule"
