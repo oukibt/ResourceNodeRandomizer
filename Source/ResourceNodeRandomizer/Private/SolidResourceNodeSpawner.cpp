@@ -400,10 +400,12 @@ void USolidResourceNodeSpawner::ReplaceStandardResourceNodesUpdate(UWorld* World
             ClosestNode.Key->SetIsOccupied(true);
             ResourceExtractor->mExtractableResource = ClosestNode.Key;
         }
-        else
-        {
-            ResourceExtractor->Destroy();
-        }
+        // I'm not sure what functionality this may break, but it appears that custom nodes
+        // Are handled gracefully already by the engine, and so this may be un-necessary
+//        else
+//        {
+//            ResourceExtractor->Destroy();
+//        }
     }
 
     for (TActorIterator<AFGPortableMiner> It(World); It; ++It)
@@ -419,10 +421,12 @@ void USolidResourceNodeSpawner::ReplaceStandardResourceNodesUpdate(UWorld* World
         {
             PortableMiner->mExtractResourceNode = ClosestNode.Key;
         }
-        else
-        {
-            PortableMiner->Destroy();
-        }
+        // I'm not sure what functionality this may break, but it appears that custom nodes
+        // Are handled gracefully already by the engine, and so this may be un-necessary
+//        else
+//        {
+//            PortableMiner->Destroy();
+//        }
     }
 }
 
