@@ -119,6 +119,52 @@ void USolidResourceNodeSpawner::ScanWorldResourceNodes(UWorld* World)
     if (!World) return;
     if (IsAllResourcesAlreadyScanned()) return;
 
+///////////////////////////////////////////////////////////////
+// Add Logging to find resources                             //
+///////////////////////////////////////////////////////////////
+
+ FResourceNodeRandomizerModule::Log(TEXT("=== Begin Logging All AFGResourceNodes in the World ==="));
+
+    for (TActorIterator<AFGResourceNode> It(World); It; ++It)
+    {
+        AFGResourceNode* ResourceNode = *It;
+
+        FString NodeName = ResourceNode->GetName();
+        FString ResourceClass = ResourceNode->GetResourceClass() ? ResourceNode->GetResourceClass()->GetName() : TEXT("None");
+
+        FString ResourceForm;
+        switch (ResourceNode->GetResourceForm())
+        {
+            case EResourceForm::RF_SOLID: ResourceForm = TEXT("Solid"); break;
+            case EResourceForm::RF_LIQUID: ResourceForm = TEXT("Liquid"); break;
+            case EResourceForm::RF_GAS: ResourceForm = TEXT("Gas"); break;
+            case EResourceForm::RF_HEAT: ResourceForm = TEXT("Heat"); break;
+            default: ResourceForm = FString::Printf(TEXT("Unknown (%d)"), static_cast<int32>(ResourceNode->GetResourceForm())); break;
+        }
+
+        FString ResourceAmount;
+        switch (ResourceNode->GetResourceAmount())
+        {
+            case EResourceAmount::RA_Poor: ResourceAmount = TEXT("Poor"); break;
+            case EResourceAmount::RA_Normal: ResourceAmount = TEXT("Normal"); break;
+            case EResourceAmount::RA_Rich: ResourceAmount = TEXT("Rich"); break;
+            case EResourceAmount::RA_Infinite: ResourceAmount = TEXT("Infinite"); break;
+            default: ResourceAmount = FString::Printf(TEXT("Unknown (%d)"), static_cast<int32>(ResourceNode->GetResourceAmount())); break;
+        }
+
+        FResourceNodeRandomizerModule::Log(FString::Printf(
+            TEXT("%s|%s|%s|%s"),
+            *NodeName, *ResourceClass, *ResourceForm, *ResourceAmount
+        ));
+    }
+
+    FResourceNodeRandomizerModule::Log(TEXT("=== End Logging All AFGResourceNodes in the World ==="));
+
+///////////////////////////////////////////////////////////////
+// End Logging to find resources                             //
+///////////////////////////////////////////////////////////////
+
+
     TSet<TSubclassOf<UFGResourceDescriptor>> UniqueResourceClasses;
 
     // ResouceNode (logical) and their ore meshes are not connected (Even with ResouceNode->GetMeshActor()).
