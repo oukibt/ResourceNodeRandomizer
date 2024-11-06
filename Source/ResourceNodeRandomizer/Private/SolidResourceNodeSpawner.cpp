@@ -13,9 +13,7 @@
 #include "FGBuildableResourceExtractor.h"
 #include "Representation/FGResourceNodeRepresentation.h"
 #include "ResourceNodeGrouper.h"
-
 #include "ResourceNodeRandomizer.h"
-
 #include "EngineUtils.h"
 
 USolidResourceNodeSpawner::USolidResourceNodeSpawner()
@@ -24,12 +22,12 @@ USolidResourceNodeSpawner::USolidResourceNodeSpawner()
 
 int USolidResourceNodeSpawner::GetScannedUniqueResourceTypeSize() const
 {
-    return this->UniqueResourceNodeTypes.Num();
+    return UniqueResourceNodeTypes.Num();
 }
 
 bool USolidResourceNodeSpawner::IsAllResourcesAlreadyScanned() const
 {
-    return this->UniqueResourceNodeTypes.Num() >= this->MaxUniqueClasses;
+    return UniqueResourceNodeTypes.Num() >= MaxUniqueClasses;
 }
 
 bool USolidResourceNodeSpawner::IsValidOreMeshPath(FString MeshPath)
@@ -67,7 +65,6 @@ bool USolidResourceNodeSpawner::TryGetOreTypeFromName(FString Name, EOreType& Or
             return true;
         }
     }
-
     return false;
 }
 
@@ -81,7 +78,6 @@ bool USolidResourceNodeSpawner::TryGetNameFromOreType(EOreType OreType, FString&
             return true;
         }
     }
-
     return false;
 }
 
@@ -116,61 +112,19 @@ FVector USolidResourceNodeSpawner::GetCenterOfVectors(TArray<FVector> VectorList
 
 void USolidResourceNodeSpawner::ScanWorldResourceNodes(UWorld* World)
 {
-    if (!World) return;
-    if (IsAllResourcesAlreadyScanned()) return;
+    if (!World || IsAllResourcesAlreadyScanned()) return;
 
-///////////////////////////////////////////////////////////////
-// Add Logging to find resources                             //
-///////////////////////////////////////////////////////////////
-
- FResourceNodeRandomizerModule::Log(TEXT("=== Begin Logging All AFGResourceNodes in the World ==="));
-
-    for (TActorIterator<AFGResourceNode> It(World); It; ++It)
-    {
-        AFGResourceNode* ResourceNode = *It;
-
-        FString NodeName = ResourceNode->GetName();
-        FString ResourceClass = ResourceNode->GetResourceClass() ? ResourceNode->GetResourceClass()->GetName() : TEXT("None");
-
-        FString ResourceForm;
-        switch (ResourceNode->GetResourceForm())
-        {
-            case EResourceForm::RF_SOLID: ResourceForm = TEXT("Solid"); break;
-            case EResourceForm::RF_LIQUID: ResourceForm = TEXT("Liquid"); break;
-            case EResourceForm::RF_GAS: ResourceForm = TEXT("Gas"); break;
-            case EResourceForm::RF_HEAT: ResourceForm = TEXT("Heat"); break;
-            default: ResourceForm = FString::Printf(TEXT("Unknown (%d)"), static_cast<int32>(ResourceNode->GetResourceForm())); break;
-        }
-
-        FString ResourceAmount;
-        switch (ResourceNode->GetResourceAmount())
-        {
-            case EResourceAmount::RA_Poor: ResourceAmount = TEXT("Poor"); break;
-            case EResourceAmount::RA_Normal: ResourceAmount = TEXT("Normal"); break;
-            case EResourceAmount::RA_Rich: ResourceAmount = TEXT("Rich"); break;
-            case EResourceAmount::RA_Infinite: ResourceAmount = TEXT("Infinite"); break;
-            default: ResourceAmount = FString::Printf(TEXT("Unknown (%d)"), static_cast<int32>(ResourceNode->GetResourceAmount())); break;
-        }
-
-        FResourceNodeRandomizerModule::Log(FString::Printf(
-            TEXT("%s|%s|%s|%s"),
-            *NodeName, *ResourceClass, *ResourceForm, *ResourceAmount
-        ));
-    }
-
-    FResourceNodeRandomizerModule::Log(TEXT("=== End Logging All AFGResourceNodes in the World ==="));
-
-///////////////////////////////////////////////////////////////
-// End Logging to find resources                             //
-///////////////////////////////////////////////////////////////
-
+    /////////////////////////////////////////////////////////////////////
+    //////////// Uncomment to enable logging of all resource nodes     //
+    /////////////////////////////////////////////////////////////////////
+//  LogAllResourceNodes(World);
 
     TSet<TSubclassOf<UFGResourceDescriptor>> UniqueResourceClasses;
 
     // ResouceNode (logical) and their ore meshes are not connected (Even with ResouceNode->GetMeshActor()).
     for (TActorIterator<AFGResourceNode> It(World); It; ++It)
     {
-        if (UniqueResourceClasses.Num() >= this->MaxUniqueClasses) break;
+        if (UniqueResourceClasses.Num() >= MaxUniqueClasses) break;
 
         AFGResourceNode* ResourceNode = *It;
         if (ResourceNode->GetResourceNodeType() == EResourceNodeType::Node &&
@@ -181,12 +135,11 @@ void USolidResourceNodeSpawner::ScanWorldResourceNodes(UWorld* World)
             {
                 ResourceNodeClass = ResourceNode->GetClass();
             }
-
             UniqueResourceClasses.FindOrAdd(ResourceNode->GetResourceClass());
         }
     }
 
-    if (UniqueResourceClasses.Num() < this->MaxUniqueClasses) return;
+    if (UniqueResourceClasses.Num() < MaxUniqueClasses) return;
 
     for (auto& ResourceClass : UniqueResourceClasses)
     {
@@ -195,17 +148,19 @@ void USolidResourceNodeSpawner::ScanWorldResourceNodes(UWorld* World)
 
         FString TexturePath = CompasTexture->GetPathName();
         EOreType CurrentOreType;
+        bool bFound = false;
 
-        int PartIndex;
-        for (PartIndex = 0; PartIndex < OreTypeNameList.Num(); PartIndex++)
+        for (const auto& OrePair : OreTypeNameList)
         {
-            if (TexturePath.Contains(OreTypeNameList[PartIndex].Key, ESearchCase::IgnoreCase))
+            if (TexturePath.Contains(OrePair.Key, ESearchCase::IgnoreCase))
             {
-                CurrentOreType = OreTypeNameList[PartIndex].Value;
+                CurrentOreType = OrePair.Value;
+                bFound = true;
                 break;
             }
         }
-        if (PartIndex >= OreTypeNameList.Num()) continue;
+
+        if (!bFound) continue;
 
         for (auto& asset : ValidResourceNodeAssets)
         {
@@ -213,7 +168,6 @@ void USolidResourceNodeSpawner::ScanWorldResourceNodes(UWorld* World)
             {
                 asset.ResourceClass = ResourceClass;
                 UniqueResourceNodeTypes.Add(CurrentOreType, asset);
-
                 break;
             }
         }
@@ -241,7 +195,6 @@ TPair<AFGResourceNode*, float> USolidResourceNodeSpawner::GetClosestCustomResour
         if (OccupiedType != EOccupiedType::Any)
         {
             bool Occupied = ResourceNode->IsOccupied();
-
             if (OccupiedType == EOccupiedType::Unoccupied && Occupied) continue;
             if (OccupiedType == EOccupiedType::Occupied && !Occupied) continue;
         }
@@ -263,7 +216,6 @@ bool USolidResourceNodeSpawner::WorldIsLoaded(UWorld* World)
     {
         return true;
     }
-
     return false;
 }
 
@@ -293,28 +245,6 @@ void USolidResourceNodeSpawner::ReplaceStandardResourceNodesUpdate(UWorld* World
         }
     }
 
-    /*
-    // faster but not work properly always (0.5ms)
-    for (TActorIterator<AStaticMeshActor> It(World); It; ++It)
-    {
-        TArray<UStaticMeshComponent*> StaticMeshComponents;
-        (*It)->GetComponents<UStaticMeshComponent>(StaticMeshComponents);
-
-        for (UStaticMeshComponent* StaticMeshComponent : StaticMeshComponents)
-        {
-            if (UStaticMesh* StaticMesh = StaticMeshComponent->GetStaticMesh())
-            {
-                if (IsValidOreMeshPath(StaticMesh->GetPathName()) && !StaticMeshComponent->ComponentTags.Contains(CustomResourceNodeTag))
-                {
-                    StaticMeshComponent->SetActive(false);
-                    StaticMeshComponent->SetVisibility(false);
-                    StaticMeshComponent->DestroyComponent();
-                }
-            }
-        }
-    }
-    */
-
     TArray<FCustomResourceNode> StandardResourceNodeCollection;
 
     // Destroy Resource Nodes
@@ -332,19 +262,18 @@ void USolidResourceNodeSpawner::ReplaceStandardResourceNodesUpdate(UWorld* World
 
             FString TexturePath = CompasTexture->GetPathName();
             EOreType CurrentOreType;
+            bool bFound = false;
 
-            int PartIndex;
-            for (PartIndex = 0; PartIndex < OreTypeNameList.Num(); PartIndex++)
+            for (const auto& OrePair : OreTypeNameList)
             {
-                if (TexturePath.Contains(OreTypeNameList[PartIndex].Key, ESearchCase::IgnoreCase))
+                if (TexturePath.Contains(OrePair.Key, ESearchCase::IgnoreCase))
                 {
-                    CurrentOreType = OreTypeNameList[PartIndex].Value;
+                    CurrentOreType = OrePair.Value;
+                    bFound = true;
                     break;
                 }
             }
-            if (PartIndex >= OreTypeNameList.Num()) continue;
-
-            //
+            if (!bFound) continue;
 
             FCustomResourceNode CustomNodeDescription(ResourceNode->GetActorLocation(), CurrentOreType, ResourceNode->GetResoucePurity());
             StandardResourceNodeCollection.Add(CustomNodeDescription);
@@ -404,7 +333,6 @@ void USolidResourceNodeSpawner::ReplaceStandardResourceNodesUpdate(UWorld* World
         for (int32 i = LastResourceNodeIndex; i > 0; i--)
         {
             FVector LocationForSwapA = CustomResourceNodesList[i].GetLocation();
-
             int32 ProceduralIndex = Randomizer.ProceduralRangeIntByVector(LocationForSwapA, 0, i);
 
             if (i != ProceduralIndex)
@@ -429,12 +357,9 @@ void USolidResourceNodeSpawner::ReplaceStandardResourceNodesUpdate(UWorld* World
         }
     }
 
-    //
-
     for (TActorIterator<AFGBuildableResourceExtractor> It(World); It; ++It)
     {
         AFGBuildableResourceExtractor* ResourceExtractor = *It;
-
         if (CustomResourceNodeMap.Contains(Cast<AFGResourceNode>(ResourceExtractor->mExtractableResource))) continue;
         if (ResourceExtractor->GetExtractorTypeName() != TEXT("Miner")) continue; // Ore miners only (any mk)
 
@@ -453,11 +378,10 @@ void USolidResourceNodeSpawner::ReplaceStandardResourceNodesUpdate(UWorld* World
 //            ResourceExtractor->Destroy();
 //        }
     }
-
+    
     for (TActorIterator<AFGPortableMiner> It(World); It; ++It)
     {
         AFGPortableMiner* PortableMiner = *It;
-
         if (CustomResourceNodeMap.Contains(Cast<AFGResourceNode>(PortableMiner->mExtractResourceNode))) continue;
 
         FVector ExtractorLocation = PortableMiner->GetActorLocation();
@@ -482,12 +406,10 @@ bool USolidResourceNodeSpawner::SpawnCustomResourceNode(UWorld* World, EOreType 
     ProceduralGenerator Randomizer(Seed);
 
     // Spawn Node
-
     AFGResourceNode* CustomNode = World->SpawnActor<AFGResourceNode>(ResourceNodeClass, Location, FRotator());
     if (!CustomNode) return false;
 
     VisualResourceNodeInfo ResourceNodeInfo = UniqueResourceNodeTypes[OreType];
-
     CustomNode->InitResource(ResourceNodeInfo.ResourceClass, EResourceAmount::RA_Infinite, Purity);
 
     CustomNode->mResourceNodeType = EResourceNodeType::Node;
@@ -514,7 +436,6 @@ bool USolidResourceNodeSpawner::SpawnCustomResourceNode(UWorld* World, EOreType 
 
     CustomNode->UpdateMeshFromDescriptor();
     CustomNode->UpdateNodeRepresentation();
-
     CustomNode->InitRadioactivity();
     CustomNode->UpdateRadioactivity();
 
@@ -523,14 +444,11 @@ bool USolidResourceNodeSpawner::SpawnCustomResourceNode(UWorld* World, EOreType 
     CustomNode->mBoxComponent->SetCollisionProfileName("Resource");
 
     // Spawn Mesh
-
     AActor* NewActor = World->SpawnActor<AActor>(AActor::StaticClass(), FTransform(Location));
     if (!NewActor) return false;
 
     UStaticMeshComponent* MeshComponent = NewObject<UStaticMeshComponent>(NewActor);
     if (!MeshComponent) return false;
-
-    //
 
     MeshComponent->SetCollisionProfileName("ResourceMesh");
     MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -540,8 +458,6 @@ bool USolidResourceNodeSpawner::SpawnCustomResourceNode(UWorld* World, EOreType 
     MeshComponent->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
     MeshComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECollisionResponse::ECR_Block);
 
-    //
-
     MeshComponent->ComponentTags.Add(CustomResourceNodeTag);
     MeshComponent->SetStaticMesh(ResourceNodeInfo.Mesh);
     MeshComponent->SetMaterial(0, ResourceNodeInfo.Material);
@@ -550,8 +466,6 @@ bool USolidResourceNodeSpawner::SpawnCustomResourceNode(UWorld* World, EOreType 
     NewActor->SetRootComponent(MeshComponent);
     MeshComponent->RegisterComponent();
 
-    //
-
     FRotator Rotation = FRotator(0.0f, Randomizer.ProceduralRangeFloatByVector(Location, 0.0f, 360.0f), 0.0f);
     MeshComponent->SetWorldRotation(Rotation);
     MeshComponent->SetWorldScale3D(ResourceNodeInfo.Scale);
@@ -559,7 +473,6 @@ bool USolidResourceNodeSpawner::SpawnCustomResourceNode(UWorld* World, EOreType 
     // Some meshes have a displaced pivot
     FVector Min, Max;
     MeshComponent->GetLocalBounds(Min, Max);
-
     FVector MeshPivot = (Min + Max) / 2.0f;
 
     FTransform MeshTransform = MeshComponent->GetComponentTransform();
@@ -567,8 +480,6 @@ bool USolidResourceNodeSpawner::SpawnCustomResourceNode(UWorld* World, EOreType 
 
     FVector CorrectedLocation = Location - (AdjustedPivot - MeshTransform.GetLocation()) + ResourceNodeInfo.Offset;
     MeshComponent->SetWorldLocation(CorrectedLocation);
-
-    //
 
     CustomResourceNodeMap.Add(CustomNode, MeshComponent);
 
@@ -580,4 +491,44 @@ void USolidResourceNodeSpawner::Cleanup(UWorld* World)
     ResourceNodeClass = nullptr;
     CustomResourceNodeMap.Empty();
     UniqueResourceNodeTypes.Empty();
+}
+
+void USolidResourceNodeSpawner::LogAllResourceNodes(UWorld* World)
+{
+    FResourceNodeRandomizerModule::Log(TEXT("=== Begin Logging All AFGResourceNodes in the World ==="));
+
+    for (TActorIterator<AFGResourceNode> It(World); It; ++It)
+    {
+        AFGResourceNode* ResourceNode = *It;
+
+        FString NodeName = ResourceNode->GetName();
+        FString ResourceClass = ResourceNode->GetResourceClass() ? ResourceNode->GetResourceClass()->GetName() : TEXT("None");
+
+        FString ResourceForm;
+        switch (ResourceNode->GetResourceForm())
+        {
+        case EResourceForm::RF_SOLID: ResourceForm = TEXT("Solid"); break;
+        case EResourceForm::RF_LIQUID: ResourceForm = TEXT("Liquid"); break;
+        case EResourceForm::RF_GAS: ResourceForm = TEXT("Gas"); break;
+        case EResourceForm::RF_HEAT: ResourceForm = TEXT("Heat"); break;
+        default: ResourceForm = FString::Printf(TEXT("Unknown (%d)"), static_cast<int32>(ResourceNode->GetResourceForm())); break;
+        }
+
+        FString ResourceAmount;
+        switch (ResourceNode->GetResourceAmount())
+        {
+        case EResourceAmount::RA_Poor: ResourceAmount = TEXT("Poor"); break;
+        case EResourceAmount::RA_Normal: ResourceAmount = TEXT("Normal"); break;
+        case EResourceAmount::RA_Rich: ResourceAmount = TEXT("Rich"); break;
+        case EResourceAmount::RA_Infinite: ResourceAmount = TEXT("Infinite"); break;
+        default: ResourceAmount = FString::Printf(TEXT("Unknown (%d)"), static_cast<int32>(ResourceNode->GetResourceAmount())); break;
+        }
+
+        FResourceNodeRandomizerModule::Log(FString::Printf(
+            TEXT("%s|%s|%s|%s"),
+            *NodeName, *ResourceClass, *ResourceForm, *ResourceAmount
+        ));
+    }
+
+    FResourceNodeRandomizerModule::Log(TEXT("=== End Logging All AFGResourceNodes in the World ==="));
 }
