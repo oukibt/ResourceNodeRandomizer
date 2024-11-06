@@ -8,7 +8,7 @@
 #include "SolidResourceNodeSpawner.generated.h"
 
 /**
- *
+ * Manages spawning and grouping of custom resource nodes in the game world.
  */
 UCLASS()
 class RESOURCENODERANDOMIZER_API USolidResourceNodeSpawner : public UObject
@@ -26,9 +26,8 @@ public:
     USolidResourceNodeSpawner();
 
     const int MaxUniqueClasses = 10; // number of ore types in EOreType
-
+    
     TPair<AFGResourceNode*, float> GetClosestCustomResourceNode(UWorld* World, const FVector Location, EOccupiedType OccupiedType = EOccupiedType::Any);
-
     int GetScannedUniqueResourceTypeSize() const;
     bool IsAllResourcesAlreadyScanned() const;
     bool WorldIsLoaded(UWorld* World);
@@ -39,20 +38,8 @@ public:
     void ScanWorldResourceNodes(UWorld* World);
     void ReplaceStandardResourceNodesUpdate(UWorld* World);
     void Cleanup(UWorld* World);
-
-private:
-    bool SpawnCustomResourceNode(UWorld* World, EOreType OreType, FVector Location, const EResourcePurity Purity, bool bUseRaycastAdjust);
-
-    bool IsValidOreMeshPath(FString MeshPath);
-    bool TryGetOreTypeByMeshPath(FString MeshPath, EOreType& OreType);
-
-    FVector GetCenterOfVectors(TArray<FVector> VectorList);
-
-    const FName CustomResourceNodeTag = "CustomResourceNode";
-
-public:
+    
     TArray<VisualResourceNodeInfo> ValidResourceNodeAssets = {
-
         VisualResourceNodeInfo(EOreType::Copper,
             "/Game/FactoryGame/Resource/RawResources/Nodes/ResourceNode_OreCopper_01.ResourceNode_OreCopper_01",
             "/Game/FactoryGame/Resource/RawResources/OreCopper/Material/ResourceNode_Copper_Inst.ResourceNode_Copper_Inst",
@@ -114,8 +101,7 @@ public:
             FVector(1.85f, 1.85f, 1.85f)),
     };
 
-    TArray<TPair<FString, EOreType>> OreTypeNameList{
-
+    TArray<TPair<FString, EOreType>> OreTypeNameList {
         MakeTuple("Bauxite", EOreType::Bauxite),
         MakeTuple("Caterium", EOreType::Caterium),
         MakeTuple("Coal", EOreType::Coal),
@@ -128,8 +114,7 @@ public:
         MakeTuple("Uranium", EOreType::Uranium),
     };
 
-    TArray<EOreType> ShuffleTypes{
-
+    TArray<EOreType> ShuffleTypes {
         EOreType::Bauxite,
         EOreType::Caterium,
         EOreType::Coal,
@@ -140,8 +125,7 @@ public:
         EOreType::Sulfur,
     };
 
-    TArray<EOreType> MakeGroupTypes{
-
+    TArray<EOreType> MakeGroupTypes {
         EOreType::Caterium,
         EOreType::Coal,
         EOreType::Copper,
@@ -150,12 +134,18 @@ public:
         EOreType::Quartz,
         EOreType::Sulfur,
     };
-
+    
     int32 Seed = 0;
-
     TMap<EOreType, VisualResourceNodeInfo> UniqueResourceNodeTypes;
 
 private:
+    bool SpawnCustomResourceNode(UWorld* World, EOreType OreType, FVector Location, const EResourcePurity Purity, bool bUseRaycastAdjust);
+    bool IsValidOreMeshPath(FString MeshPath);
+    bool TryGetOreTypeByMeshPath(FString MeshPath, EOreType& OreType);
+    FVector GetCenterOfVectors(TArray<FVector> VectorList);
+    void LogAllResourceNodes(UWorld* World);
+
     TMap<AFGResourceNode*, UStaticMeshComponent*> CustomResourceNodeMap;
     UClass* ResourceNodeClass = nullptr;
+    const FName CustomResourceNodeTag = "CustomResourceNode";
 };
