@@ -6,11 +6,11 @@
 enum class EOreType : uint8
 {
     Bauxite,
-    Caterium, // Gold
+    Caterium,
     Coal,
     Copper,
     Iron,
-    Limestone, // Stone
+    Limestone,
     Quartz,
     SAM,
     Sulfur,
@@ -20,26 +20,9 @@ enum class EOreType : uint8
 class VisualResourceNodeInfo
 {
 public:
-    VisualResourceNodeInfo(EOreType InOreType, FString InMeshPath, FString InMaterialPath, FVector InOffset, FVector InScale)
-        : OreType(InOreType), MeshPath(InMeshPath), MaterialPath(InMaterialPath), Offset(InOffset), Scale(InScale)
-    {
-    }
+    VisualResourceNodeInfo(EOreType InOreType, FString InMeshPath, FString InMaterialPath, FVector InOffset, FVector InScale);
 
-    //
-
-    bool TryLoadFromAssets()
-    {
-        if (Loaded) return true;
-
-        Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), nullptr, *MeshPath));
-        if (!Mesh) return false;
-
-        Material = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(), nullptr, *MaterialPath));
-        if (!Material) return false;
-
-        Loaded = true;
-        return true;
-    }
+    bool TryLoadFromAssets();
 
     bool Loaded = false;
 
@@ -50,7 +33,7 @@ public:
     FVector Offset;
     FVector Scale;
 
-    TSubclassOf<UFGResourceDescriptor> ResourceClass = NULL;
+    TSubclassOf<UFGResourceDescriptor> ResourceClass = nullptr;
     UStaticMesh* Mesh = nullptr;
     UMaterialInterface* Material = nullptr;
 };
