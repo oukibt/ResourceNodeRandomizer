@@ -7,7 +7,7 @@
 
 AWorldSeedManager::AWorldSeedManager()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 }
 
@@ -17,10 +17,10 @@ void AWorldSeedManager::BeginPlay()
 	
 }
 
-void AWorldSeedManager::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
+// void AWorldSeedManager::Tick(float DeltaTime)
+// {
+// 	Super::Tick(DeltaTime);
+// }
 
 void AWorldSeedManager::OnWorldInitialized(const UWorld::FActorsInitializedParams& someActorsInitializedParams)
 {
@@ -37,10 +37,15 @@ void AWorldSeedManager::PostLoadGame_Implementation(int32 SaveVersion, int32 Gam
     FWorldDelegates::OnWorldInitializedActors.AddUObject(this, &AWorldSeedManager::OnWorldInitialized);
 }
 
+int32 AWorldSeedManager::GenerateSeed() const
+{
+    // Seed = (int32)(FMath::Rand() * FMath::Rand()); // around 93.5m unique values from 0 to 0x7FFFFFFF
+    return static_cast<int32>(FMath::Rand() * FMath::Rand());
+}
+
 void AWorldSeedManager::InitRandom()
 {
-    Seed = (int32)(FMath::Rand() * FMath::Rand()); // around 93.5m unique values from 0 to 0x7FFFFFFF
-
+    Seed = GenerateSeed();
     // Seed = (int32)(FMath::RandRange(0.0, 1.0) * 0x7FFFFFFF); // 32768 unique values only
     // Seed = FMath::RandRange(0, 0x7FFFFFFF); // 32768 unique values only
 

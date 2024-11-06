@@ -16,11 +16,11 @@ public:
 	virtual void BeginPlay() override;
 
 protected:
-	virtual void Tick(float DeltaTime) override;
+	// virtual void Tick(float DeltaTime) override;
 
 public:
 	void OnWorldInitialized(const UWorld::FActorsInitializedParams& someActorsInitializedParams);
-
+	int32 GenerateSeed() const;
 	void InitRandom();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Replicated) // , ReplicatedUsing = OnRep_SeedChanged)
