@@ -1,16 +1,16 @@
+#include "ResourceNodeRandomizer.h"
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"
-
-#include "ResourceNodeRandomizer.h"
 #include "EngineUtils.h"
 
 #define LOCTEXT_NAMESPACE "FResourceNodeRandomizerModule"
+
+USolidResourceNodeSpawner* ResourceNodeSpawner = nullptr;
 
 TSharedPtr<FOutputDeviceFile> FResourceNodeRandomizerModule::WeakLogDevice = nullptr;
 
 void FResourceNodeRandomizerModule::StartupModule()
 {
-    // UE_LOG don't logging for some reason
     FString LogFilePath = FPaths::Combine(FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA")), TEXT("FactoryGame/Saved/Logs/ResourceNodeRandomizer/Logs.txt"));
     IFileManager::Get().MakeDirectory(*FPaths::GetPath(LogFilePath), true);
     
@@ -18,8 +18,6 @@ void FResourceNodeRandomizerModule::StartupModule()
     {
         WeakLogDevice = MakeShareable(new FOutputDeviceFile(*LogFilePath, true));
     }
-
-    //
 
     ResourceNodeSpawner = NewObject<USolidResourceNodeSpawner>();
     FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &FResourceNodeRandomizerModule::OnPostLoadMap);
@@ -41,8 +39,6 @@ void FResourceNodeRandomizerModule::ShutdownModule()
     }
 }
 
-//
-
 void FResourceNodeRandomizerModule::Log(FString LogData)
 {
     if (WeakLogDevice.IsValid())
@@ -63,15 +59,13 @@ void FResourceNodeRandomizerModule::Log(FString LogData)
 // In menu
 void FResourceNodeRandomizerModule::OnPostLoadMap(UWorld* LoadedWorld)
 {
-    float scanInterval = 1.5f;
-    LoadedWorld->GetTimerManager().SetTimer(ScanTimerHandle, FTimerDelegate::CreateRaw(this, &FResourceNodeRandomizerModule::ScanWorldForResourceNodes, LoadedWorld), scanInterval, true);
+    float ScanInterval = 1.5f;
+    LoadedWorld->GetTimerManager().SetTimer(ScanTimerHandle, FTimerDelegate::CreateRaw(this, &FResourceNodeRandomizerModule::ScanWorldForResourceNodes, LoadedWorld), ScanInterval, true);
 }
 
 void FResourceNodeRandomizerModule::ScanWorldForResourceNodes(UWorld* LoadedWorld)
 {
     if (!GEngine || !LoadedWorld) return;
-
-    //
 
     if (ResourceNodeSpawner->WorldIsLoaded(LoadedWorld))
     {
@@ -85,12 +79,9 @@ void FResourceNodeRandomizerModule::ScanWorldForResourceNodes(UWorld* LoadedWorl
                 {
                     SeedManager = NewSeedManager;
                 }
-                else
+                else if (SeedManager != NewSeedManager)
                 {
-                    if (SeedManager != NewSeedManager)
-                    {
-                        NewSeedManager->Destroy();
-                    }
+                    NewSeedManager->Destroy();
                 }
             }
 
